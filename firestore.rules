@@ -1,0 +1,55 @@
+// firestore.rules
+// Cola este conteúdo em: Firebase Console → Firestore → Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Funções auxiliares
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    function isMaster() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'master';
+    }
+
+    function isParticipant(challengeId) {
+      return exists(/databases/$(database)/documents/participants/$(request.auth.uid + '_' + challengeId));
+    }
+
+    // USERS
+    match /users/{userId} {
+      allow read: if isLoggedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+
+    // CHALLENGES
+    match /challenges/{challengeId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn() && isMaster();
+      allow update: if isLoggedIn() && isMaster();
+      allow delete: if isLoggedIn() && isMaster();
+    }
+
+    // PARTICIPANTS
+    match /participants/{participantId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn();
+      allow delete: if isLoggedIn() && isMaster();
+    }
+
+    // ENTRIES
+    match /entries/{entryId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
+      allow delete: if isLoggedIn() && resource.data.user_id == request.auth.uid;
+    }
+  }
+}
