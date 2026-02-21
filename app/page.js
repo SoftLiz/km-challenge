@@ -18,8 +18,8 @@ const calcMetrics = (userId, entries, challenge) => {
   const meta = challenge.meta_km || 120
   const start = new Date(challenge.data_inicio + 'T00:00:00')
   const end = new Date(challenge.data_fim + 'T23:59:59')
-  const totalDays = Math.round((end - start) / 86400000) + 1
-  const elapsedDays = Math.min(Math.round((today - start) / 86400000) + 1, totalDays)
+  const totalDays = Math.floor((end - start) / 86400000) + 1
+  const elapsedDays = Math.min(Math.floor((today - start) / 86400000) + 1, totalDays)
   const remainingDays = Math.max(totalDays - elapsedDays, 0)
   const pct = Math.min((total / meta) * 100, 100)
   const daysWithActivity = new Set(userEntries.map(e => e.data)).size
