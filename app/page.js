@@ -16,19 +16,39 @@ const calcMetrics = (userId, entries, challenge) => {
   const userEntries = entries.filter(e => e.user_id === userId && e.challenge_id === challenge.id)
   const total = userEntries.reduce((s, e) => s + (e.km || 0), 0)
   const meta = challenge.meta_km || 120
-  const start = new Date(challenge.data_inicio + 'T00:00:00')
-  const end = new Date(challenge.data_fim + 'T23:59:59')
-  const totalDays = Math.floor((end - start) / 86400000) + 1
-  const elapsedDays = Math.min(Math.floor((today - start) / 86400000) + 1, totalDays)
+
+  // ─── CÁLCULO DE DIAS – versão limpa e segura ───────────────────────────────
+  const start     = new Date(challenge.data_inicio)
+  const end       = new Date(challenge.data_fim)
+  const todayDate = new Date(fmt(new Date()))   // apenas a data de hoje (meia-noite)
+
+  const totalDays    = Math.floor((end - start) / 86400000) + 1
+  const rawElapsed   = Math.floor((todayDate - start) / 86400000) + 1
+  const elapsedDays  = Math.min(Math.max(rawElapsed, 1), totalDays)
   const remainingDays = Math.max(totalDays - elapsedDays, 0)
+  // ────────────────────────────────────────────────────────────────────────────
+
   const pct = Math.min((total / meta) * 100, 100)
   const daysWithActivity = new Set(userEntries.map(e => e.data)).size
   const regularidade = elapsedDays > 0 ? (daysWithActivity / elapsedDays) * 100 : 0
-  const mediaReal = elapsedDays > 0 ? total / elapsedDays : 0
-  const metaIdeal = remainingDays > 0 ? (meta - total) / remainingDays : 0
+  const mediaReal    = elapsedDays > 0 ? total / elapsedDays : 0
+  const metaIdeal    = remainingDays > 0 ? (meta - total) / remainingDays : 0
   const ritmoEsperado = elapsedDays > 0 ? (meta / totalDays) * elapsedDays : 0
   const ritmo = total >= ritmoEsperado ? 'ahead' : 'behind'
-  return { total, meta, pct, totalDays, elapsedDays, remainingDays, regularidade, mediaReal, metaIdeal, ritmo, daysWithActivity }
+
+  return {
+    total,
+    meta,
+    pct,
+    totalDays,
+    elapsedDays,
+    remainingDays,
+    regularidade,
+    mediaReal,
+    metaIdeal,
+    ritmo,
+    daysWithActivity
+  }
 }
 
 const avatarColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#DDA0DD', '#98D8C8']
